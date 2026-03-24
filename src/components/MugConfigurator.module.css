@@ -1,0 +1,161 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.container.light {
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+.container.dark {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+}
+
+.header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.container.dark .header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.header h1 {
+  font-size: 28px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.themeToggle {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.container.light .themeToggle:hover {
+  background-color: #e0e0e0;
+}
+
+.container.dark .themeToggle:hover {
+  background-color: #333;
+}
+
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .main {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.previewSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.canvasWrapper {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.container.dark .canvasWrapper {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.controlsSection {
+  display: flex;
+  justify-content: center;
+}
+
+.controlsPanel {
+  width: 100%;
+  max-width: 400px;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.container.dark .controlsPanel {
+  border-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.container.light .controlsPanel {
+  background-color: #ffffff;
+}
+
+.controlsPanel h2 {
+  font-size: 22px;
+  margin-top: 0;
+  margin-bottom: 25px;
+}
+
+.controlGroup {
+  margin-bottom: 25px;
+}
+
+.controlGroup h3 {
+  font-size: 16px;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.resetButton {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 15px;
+}
+
+.resetButton:hover {
+  background-color: #ff5252;
+}
+
+.footer {
+  padding: 20px;
+  text-align: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+}
+
+.container.dark .footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.footer p {
+  margin: 0;
+  opacity: 0.7;
+}
