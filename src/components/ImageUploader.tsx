@@ -2,35 +2,36 @@
 
 import React, { useRef } from 'react';
 import styles from './ImageUploader.module.css';
+import image1 from '../assets/Images/image1.webp';
+import image2 from '../assets/Images/image2.webp';
+import image3 from '../assets/Images/image3.webp';
+import image4 from '../assets/Images/image4.webp';
+import image5 from '../assets/Images/image5.webp';
+import image6 from '../assets/Images/image6.webp';
+import image7 from '../assets/Images/image7.webp';
+import image8 from '../assets/Images/image8.webp';
+import image9 from '../assets/Images/image9.webp';
 
 interface ImageUploaderProps {
   onImageUpload: (imageData: string) => void;
-  scale: number;
-  onScaleChange: (scale: number) => void;
-  rotation: number;
-  onRotationChange: (rotation: number) => void;
-  hasImage: boolean;
+  isDark: boolean;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImageUpload,
-  scale,
-  onScaleChange,
-  rotation,
-  onRotationChange,
-  hasImage,
+  isDark,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const presetImages = [
-    buildCatSvg('#111827', '#f59e0b', '#c4a157'),
-    buildCatSvg('#1f2937', '#fbbf24', '#60a5fa'),
-    buildCatSvg('#0f172a', '#f8fafc', '#22c55e'),
-    buildCatSvg('#1e293b', '#fde68a', '#a78bfa'),
-    buildCatSvg('#f8fafc', '#0ea5e9', '#facc15'),
-    buildCatSvg('#ffffff', '#22c55e', '#fb7185'),
-    buildCatSvg('#f1f5f9', '#16a34a', '#f59e0b'),
-    buildCatSvg('#f8fafc', '#16a34a', '#22c55e'),
-    buildCatSvg('#f9fafb', '#22c55e', '#38bdf8'),
+    image1.src,
+    image2.src,
+    image3.src,
+    image4.src,
+    image5.src,
+    image6.src,
+    image7.src,
+    image8.src,
+    image9.src,
   ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,15 +39,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const imageData = event.target?.result as string;
-      onImageUpload(imageData);
+      const normalizedImage = await trimTransparentMargins(imageData);
+      onImageUpload(normalizedImage);
     };
     reader.readAsDataURL(file);
   };
 
   return (
-    <div className={styles.imageUploader}>
+    <div className={`${styles.imageUploader} ${isDark ? styles.dark : styles.light}`}>
       <div className={styles.galleryGrid}>
         <button
           type="button"
@@ -70,71 +72,71 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             key={index}
             type="button"
             className={styles.tile}
-            onClick={() => onImageUpload(preset)}
+            onClick={async () => {
+              const normalizedImage = await trimTransparentMargins(preset);
+              onImageUpload(normalizedImage);
+            }}
             aria-label={`Use preset image ${index + 1}`}
           >
             <img src={preset} alt={`Preset ${index + 1}`} className={styles.tileImage} />
           </button>
         ))}
       </div>
-
-      {hasImage && (
-        <div className={styles.controls}>
-          <div className={styles.controlGroup}>
-            <label htmlFor="scale-slider">Scale: {(scale * 100).toFixed(0)}%</label>
-            <input
-              id="scale-slider"
-              type="range"
-              min="0.5"
-              max="2"
-              step="0.1"
-              value={scale}
-              onChange={(e) => onScaleChange(Number(e.target.value))}
-              className={styles.slider}
-            />
-          </div>
-
-          <div className={styles.controlGroup}>
-            <label htmlFor="rotation-slider">Rotation: {rotation}°</label>
-            <input
-              id="rotation-slider"
-              type="range"
-              min="0"
-              max="360"
-              step="15"
-              value={rotation}
-              onChange={(e) => onRotationChange(Number(e.target.value))}
-              className={styles.slider}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-function buildCatSvg(
-  furColor: string,
-  eyeColor: string,
-  pendantColor: string,
-): string {
-  const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
-  <rect width="300" height="300" fill="#020617"/>
-  <circle cx="150" cy="162" r="90" fill="${furColor}"/>
-  <polygon points="92,110 122,48 150,110" fill="${furColor}"/>
-  <polygon points="208,110 178,48 150,110" fill="${furColor}"/>
-  <circle cx="118" cy="165" r="12" fill="${eyeColor}"/>
-  <circle cx="182" cy="165" r="12" fill="${eyeColor}"/>
-  <circle cx="118" cy="165" r="5" fill="#111827"/>
-  <circle cx="182" cy="165" r="5" fill="#111827"/>
-  <polygon points="150,180 142,190 158,190" fill="#f8fafc"/>
-  <path d="M130 202 Q150 214 170 202" fill="none" stroke="#f8fafc" stroke-width="4" stroke-linecap="round"/>
-  <ellipse cx="150" cy="238" rx="38" ry="22" fill="none" stroke="#d1d5db" stroke-width="8"/>
-  <circle cx="150" cy="250" r="8" fill="${pendantColor}"/>
-</svg>`;
+async function trimTransparentMargins(imageData: string): Promise<string> {
+  const image = await loadImage(imageData);
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext('2d');
+  if (!context) return imageData;
 
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  context.drawImage(image, 0, 0);
+  const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = data[(y * width + x) * 4 + 3];
+      if (alpha > 0) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return imageData;
+  }
+
+  const cropWidth = maxX - minX + 1;
+  const cropHeight = maxY - minY + 1;
+  const croppedCanvas = document.createElement('canvas');
+  croppedCanvas.width = cropWidth;
+  croppedCanvas.height = cropHeight;
+  const croppedContext = croppedCanvas.getContext('2d');
+  if (!croppedContext) return imageData;
+
+  croppedContext.drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  return croppedCanvas.toDataURL('image/png');
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Failed to load image'));
+    image.src = src;
+  });
 }
 
 export default ImageUploader;

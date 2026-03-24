@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Canvas3D from './Canvas3D';
-import TextCustomizer from './TextCustomizer';
 import ImageUploader from './ImageUploader';
 import DesignPreview from './DesignPreview';
 import styles from './MugConfigurator.module.css';
@@ -11,6 +10,11 @@ interface MugDesign {
   cupColor: string;
   textContent: string;
   hasTextObject: boolean;
+  textPosX: number;
+  textPosY: number;
+  textScaleX: number;
+  textScaleY: number;
+  textRotation: number;
   textAlign: 'left' | 'center' | 'right';
   isBold: boolean;
   isItalic: boolean;
@@ -23,15 +27,29 @@ interface MugDesign {
   uploadedImage: string | null;
   imageScale: number;
   imageRotation: number;
+  imageObjects: Array<{
+    id: string;
+    src: string;
+    x: number;
+    y: number;
+    scaleX: number;
+    scaleY: number;
+    rotation: number;
+  }>;
 }
 
 const MugConfigurator: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
-  const [activePanel, setActivePanel] = useState<'menu' | 'text' | 'images'>('menu');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [design, setDesign] = useState<MugDesign>({
     cupColor: '#ffffff',
     textContent: '',
     hasTextObject: false,
+    textPosX: 50,
+    textPosY: 50,
+    textScaleX: 1,
+    textScaleY: 1,
+    textRotation: 0,
     textAlign: 'left',
     isBold: false,
     isItalic: false,
@@ -44,6 +62,7 @@ const MugConfigurator: React.FC = () => {
     uploadedImage: null,
     imageScale: 1,
     imageRotation: 0,
+    imageObjects: [],
   });
 
   useEffect(() => {
@@ -59,68 +78,95 @@ const MugConfigurator: React.FC = () => {
     setDesign({ ...design, textContent: text });
   };
 
-  const handleAddTextObject = () => {
-    setDesign((prev) => ({
-      ...prev,
-      hasTextObject: true,
-      textContent: prev.textContent || 'Sample Text Object',
-    }));
-  };
-
-  const handleDeleteTextObject = () => {
-    setDesign((prev) => ({
-      ...prev,
-      hasTextObject: false,
-      textContent: '',
-    }));
-  };
-
-  const handleTextColorChange = (color: string) => {
-    setDesign({ ...design, textColor: color });
-  };
-
-  const handleTextSizeChange = (size: number) => {
-    setDesign({ ...design, textSize: size });
-  };
-
-  const handleTextAlignChange = (align: 'left' | 'center' | 'right') => {
-    setDesign({ ...design, textAlign: align });
-  };
-
-  const handleTextStyleChange = (style: 'bold' | 'italic' | 'underline') => {
-    if (style === 'bold') {
-      setDesign({ ...design, isBold: !design.isBold });
-      return;
-    }
-    if (style === 'italic') {
-      setDesign({ ...design, isItalic: !design.isItalic });
-      return;
-    }
-    setDesign({ ...design, isUnderline: !design.isUnderline });
-  };
-
-  const handleTextBackgroundColorChange = (color: string) => {
-    setDesign({ ...design, textBackgroundColor: color });
-  };
-
-  const handleLineHeightChange = (value: number) => {
-    setDesign({ ...design, lineHeight: value });
-  };
-
-  const handleFontFamilyChange = (fontFamily: string) => {
-    setDesign({ ...design, fontFamily });
-  };
-
   const handleImageUpload = (imageData: string) => {
-    setDesign({ ...design, uploadedImage: imageData });
+    setDesign((prev) => ({
+      ...prev,
+      uploadedImage: imageData,
+      imageObjects: [
+        ...prev.imageObjects,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          src: imageData,
+          x: 50,
+          y: 50,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
+        },
+      ],
+    }));
   };
 
-  const handleImageScaleChange = (scale: number) => {
-    setDesign({ ...design, imageScale: scale });
+  const handleImageTransformChange = (transform: {
+    id: string;
+    x?: number;
+    y?: number;
+    scaleX?: number;
+    scaleY?: number;
+    rotation?: number;
+  }) => {
+    setDesign((prev) => ({
+      ...prev,
+      imageObjects: prev.imageObjects.map((imageObject) =>
+        imageObject.id === transform.id
+          ? {
+              ...imageObject,
+              x: transform.x ?? imageObject.x,
+              y: transform.y ?? imageObject.y,
+              scaleX: transform.scaleX ?? imageObject.scaleX,
+              scaleY: transform.scaleY ?? imageObject.scaleY,
+              rotation: transform.rotation ?? imageObject.rotation,
+            }
+          : imageObject
+      ),
+      imageScale:
+        transform.id === prev.imageObjects[prev.imageObjects.length - 1]?.id
+          ? ((transform.scaleX ?? prev.imageObjects[prev.imageObjects.length - 1]?.scaleX ?? 1) +
+              (transform.scaleY ?? prev.imageObjects[prev.imageObjects.length - 1]?.scaleY ?? 1)) /
+            2
+          : prev.imageScale,
+      imageRotation:
+        transform.id === prev.imageObjects[prev.imageObjects.length - 1]?.id
+          ? (transform.rotation ?? prev.imageRotation)
+          : prev.imageRotation,
+    }));
   };
 
-  const handleImageRotationChange = (rotation: number) => {
-    setDesign({ ...design, imageRotation: rotation });
+  const handleClearAllObjects = () => {
+    setDesign((prev) => ({
+      ...prev,
+      imageObjects: [],
+      uploadedImage: null,
+    }));
+  };
+
+  const handleRemoveImageObject = (id: string) => {
+    setDesign((prev) => {
+      const nextObjects = prev.imageObjects.filter((imageObject) => imageObject.id !== id);
+      return {
+        ...prev,
+        imageObjects: nextObjects,
+        uploadedImage: nextObjects.length > 0 ? nextObjects[nextObjects.length - 1].src : null,
+      };
+    });
+  };
+
+  const handleMoveImageObject = (id: string, direction: 'up' | 'down') => {
+    setDesign((prev) => {
+      const currentIndex = prev.imageObjects.findIndex((imageObject) => imageObject.id === id);
+      if (currentIndex < 0) return prev;
+
+      const targetIndex = direction === 'up' ? currentIndex + 1 : currentIndex - 1;
+      if (targetIndex < 0 || targetIndex >= prev.imageObjects.length) return prev;
+
+      const nextObjects = [...prev.imageObjects];
+      const [selected] = nextObjects.splice(currentIndex, 1);
+      nextObjects.splice(targetIndex, 0, selected);
+      return {
+        ...prev,
+        imageObjects: nextObjects,
+      };
+    });
   };
 
   const toggleTheme = () => {
@@ -130,102 +176,51 @@ const MugConfigurator: React.FC = () => {
   return (
     <div className={`${styles.container} ${isDark ? styles.dark : styles.light}`}>
       <header className={styles.header}>
-        <h1>Cup Configurator</h1>
-        <button className={styles.themeToggle} onClick={toggleTheme}>
-          {isDark ? '☀️' : '🌙'}
-        </button>
+        <h1>☕ Cup Configurator</h1>
+        <div className={styles.headerActions}>
+          <button className={styles.themeToggle} onClick={toggleTheme} aria-label="Toggle theme">
+            {isDark ? '☀' : '◔'}
+          </button>
+          <button className={styles.iconButton} type="button" aria-label="Display mode">
+            ⌗
+          </button>
+        </div>
       </header>
 
       <main className={styles.main}>
-        {/* Left: 3D Preview */}
         <section className={styles.leftPanel}>
           <div className={styles.canvas3DWrapper}>
             <Canvas3D design={design} />
           </div>
         </section>
 
-        {/* Right: Design Canvas and Controls */}
-        <section className={styles.rightPanel}>
-          {/* Top-Right: Design Canvas */}
+        <button
+          type="button"
+          className={`${styles.sidebarToggle} ${isSidebarOpen ? styles.sidebarToggleOpen : styles.sidebarToggleClosed}`}
+          onClick={() => setIsSidebarOpen((prev) => !prev)}
+          aria-label={isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+        >
+          <span className={styles.sidebarToggleDots} aria-hidden="true">⋮⋮</span>
+        </button>
+
+        <section className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : styles.sidebarClosed}`}>
           <div className={styles.designCanvasWrapper}>
             <DesignPreview
-              design={design}
-              onTextChange={handleTextChange}
+              {...({
+                design,
+                onTextChange: handleTextChange,
+                onTextTransformChange: () => {},
+                onImageTransformChange: handleImageTransformChange,
+                onClearAllObjects: handleClearAllObjects,
+                onRemoveImageObject: handleRemoveImageObject,
+                onMoveImageObject: handleMoveImageObject,
+              } as any)}
             />
           </div>
-
-          {/* Bottom-Right: Object Adding Panel */}
-          <div className={`${styles.objectPanel} ${activePanel === 'menu' ? styles.objectPanelMenu : ''}`}>
-            {activePanel === 'menu' ? (
-              <>
-                <h2>Add Elements</h2>
-                <div className={styles.panelButtons}>
-                  <button
-                    type="button"
-                    className={styles.panelButton}
-                    onClick={() => setActivePanel('text')}
-                  >
-                    Text
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.panelButton}
-                    onClick={() => setActivePanel('images')}
-                  >
-                    Images
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className={styles.panelDetail}>
-                <div className={styles.panelDetailHeader}>
-                  <button
-                    type="button"
-                    className={styles.backButton}
-                    onClick={() => setActivePanel('menu')}
-                    aria-label="Back to panel selection"
-                  >
-                    ← Back
-                  </button>
-                  <h3>{activePanel === 'text' ? 'Text' : 'Images'}</h3>
-                </div>
-                <div className={styles.panelDetailBody}>
-                  {activePanel === 'text' ? (
-                    <TextCustomizer
-                      text={design.textContent}
-                      hasTextObject={design.hasTextObject}
-                      textAlign={design.textAlign}
-                      isBold={design.isBold}
-                      isItalic={design.isItalic}
-                      isUnderline={design.isUnderline}
-                      textColor={design.textColor}
-                      textBackgroundColor={design.textBackgroundColor}
-                      textSize={design.textSize}
-                      lineHeight={design.lineHeight}
-                      fontFamily={design.fontFamily}
-                      onAddText={handleAddTextObject}
-                      onDeleteText={handleDeleteTextObject}
-                      onTextAlignChange={handleTextAlignChange}
-                      onTextStyleChange={handleTextStyleChange}
-                      onColorChange={handleTextColorChange}
-                      onBackgroundColorChange={handleTextBackgroundColorChange}
-                      onSizeChange={handleTextSizeChange}
-                      onLineHeightChange={handleLineHeightChange}
-                      onFontFamilyChange={handleFontFamilyChange}
-                    />
-                  ) : (
-                    <ImageUploader
-                      onImageUpload={handleImageUpload}
-                      scale={design.imageScale}
-                      onScaleChange={handleImageScaleChange}
-                      rotation={design.imageRotation}
-                      onRotationChange={handleImageRotationChange}
-                      hasImage={!!design.uploadedImage}
-                    />
-                  )}
-                </div>
-              </div>
-            )}
+          <div className={styles.objectPanel}>
+            <div className={styles.objectPanelContent}>
+              <ImageUploader onImageUpload={handleImageUpload} isDark={isDark} />
+            </div>
           </div>
         </section>
       </main>

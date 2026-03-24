@@ -1,7 +1,10 @@
 .imageUploader {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .fileInput {
@@ -11,12 +14,14 @@
 .galleryGrid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  gap: 6px;
+  align-content: start;
+  overflow: hidden;
 }
 
 .tile {
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   background: #06080d;
@@ -45,8 +50,25 @@
 }
 
 .paperclip {
-  font-size: 34px;
+  font-size: 30px;
   color: #f8fafc;
+}
+
+.light .tile {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: #f1f5f9;
+}
+
+.light .uploadTile {
+  background: linear-gradient(145deg, #ffffff, #e5e7eb);
+}
+
+.light .paperclip {
+  color: #334155;
+}
+
+.light .tile:hover {
+  border-color: rgba(59, 130, 246, 0.45);
 }
 
 .controls {
