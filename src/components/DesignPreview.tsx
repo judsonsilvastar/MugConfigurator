@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { rasterizeCupDesign } from '@/lib/rasterizeCupDesign';
 import styles from './MugConfigurator.module.css';
 
 interface MugDesign {
@@ -39,6 +40,7 @@ interface DesignPreviewProps {
   onClearAllObjects: () => void;
   onRemoveImageObject: (id: string) => void;
   onMoveImageObject: (id: string, direction: 'up' | 'down') => void;
+  onDesignTextureChange?: (dataUrl: string) => void;
 }
 
 type ObjectKey = 'text' | 'image';
@@ -61,8 +63,9 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
   onClearAllObjects,
   onRemoveImageObject,
   onMoveImageObject,
+  onDesignTextureChange,
 }) => {
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const surfaceRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const interactionRef = useRef<{
     active: boolean;
@@ -122,11 +125,11 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
     mode: TransformMode,
     options?: { handle?: ResizeHandle; imageId?: string; element?: HTMLElement | null }
   ) => {
-    if (!canvasRef.current) return;
+    if (!surfaceRef.current) return;
     event.preventDefault();
     event.stopPropagation();
     setIsEditing(false);
-    const rect = canvasRef.current.getBoundingClientRect();
+    const rect = surfaceRef.current.getBoundingClientRect();
     const imageObject =
       object === 'image' ? design.imageObjects.find((entry) => entry.id === options?.imageId) : null;
     if (object === 'image' && !imageObject) return;
@@ -166,10 +169,10 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
 
   useEffect(() => {
     const onMouseMove = (event: MouseEvent) => {
-      if (!interactionRef.current || !interactionRef.current.active || !canvasRef.current) return;
+      if (!interactionRef.current || !interactionRef.current.active || !surfaceRef.current) return;
 
       const current = interactionRef.current;
-      const rect = canvasRef.current.getBoundingClientRect();
+      const rect = surfaceRef.current.getBoundingClientRect();
       const applyTextTransform = onTextTransformChange;
 
       if (current.mode === 'move') {
@@ -302,6 +305,19 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
     };
   }, [onImageTransformChange, onTextTransformChange]);
 
+  useEffect(() => {
+    if (!onDesignTextureChange || !surfaceRef.current) return;
+    const surface = surfaceRef.current;
+    const t = window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          void rasterizeCupDesign(surface, design).then(onDesignTextureChange);
+        });
+      });
+    }, 90);
+    return () => clearTimeout(t);
+  }, [design, onDesignTextureChange]);
+
   const handleRemoveSelected = () => {
     if (selectedObject?.type === 'image' && selectedObject.id) {
       onRemoveImageObject(selectedObject.id);
@@ -316,52 +332,16 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
   };
 
   const saveCanvasAsImage = async () => {
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = Math.max(1, Math.round(rect.width));
-    exportCanvas.height = Math.max(1, Math.round(rect.height));
-    const context = exportCanvas.getContext('2d');
-    if (!context) return;
-
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-
-    // Draw lower objects first and top objects last.
-    for (const imageObject of design.imageObjects) {
-      const objectElement = canvasRef.current.querySelector(`[data-image-id="${imageObject.id}"]`) as HTMLElement | null;
-      if (!objectElement) continue;
-      const objectRect = objectElement.getBoundingClientRect();
-      const imageElement = objectElement.querySelector('img') as HTMLImageElement | null;
-      if (!imageElement) continue;
-      await new Promise<void>((resolve) => {
-        if (imageElement.complete) {
-          resolve();
-          return;
-        }
-        imageElement.onload = () => resolve();
-        imageElement.onerror = () => resolve();
-      });
-
-      const centerX = objectRect.left - rect.left + objectRect.width / 2;
-      const centerY = objectRect.top - rect.top + objectRect.height / 2;
-
-      context.save();
-      context.translate(centerX, centerY);
-      context.rotate((imageObject.rotation * Math.PI) / 180);
-      context.scale(imageObject.scaleX, imageObject.scaleY);
-      context.drawImage(imageElement, -objectRect.width / 2, -objectRect.height / 2, objectRect.width, objectRect.height);
-      context.restore();
-    }
-
+    if (!surfaceRef.current) return;
+    const dataUrl = await rasterizeCupDesign(surfaceRef.current, design);
     const download = document.createElement('a');
-    download.href = exportCanvas.toDataURL('image/png');
+    download.href = dataUrl;
     download.download = `cup-canvas-${Date.now()}.png`;
     download.click();
   };
 
   return (
-    <div ref={canvasRef} className={styles.designCanvas} onMouseDown={() => setSelectedObject(null)}>
+    <div className={styles.designCanvas}>
       <div
         className={styles.canvasActions}
         onMouseDown={(event) => event.stopPropagation()}
@@ -448,6 +428,15 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
           </>
         )}
       </div>
+      <div
+        ref={surfaceRef}
+        className={styles.designCanvasSurface}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            setSelectedObject(null);
+          }
+        }}
+      >
       <canvas id="designCanvas" />
       {design.imageObjects.map((imageObject) => {
         const imageHandleStyle = {
@@ -490,6 +479,7 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
       })}
       {design.hasTextObject && (
         <div
+          data-cup-design-text
           className={`${styles.canvasObject} ${styles.canvasTextObject} ${selectedObject?.type === 'text' ? styles.canvasObjectSelected : ''}`}
           style={{
             left: `${design.textPosX}%`,
@@ -540,6 +530,7 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
           />
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -9,7 +9,7 @@
 }
 
 .container.light {
-  background-color: #f9f9f9;
+  background-color: #e5e7eb;
   color: #333;
 }
 
@@ -122,10 +122,10 @@
   z-index: 20;
   width: 34px;
   height: 84px;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px 0 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-right: none;
-  background: #f8fafc;
+  background: #e5e7eb;
   color: #334155;
   font-size: 18px;
   line-height: 1;
@@ -134,27 +134,38 @@
   align-items: center;
   justify-content: center;
   padding: 0;
+  right: 20px;
+  transform: translateX(0);
+  transition: transform 0.25s ease;
 }
 
 .sidebarToggleOpen {
-  right: calc(var(--sidebar-width) + 20px);
+  transform: translateX(calc(-1 * var(--sidebar-width)));
 }
 
 .sidebarToggleClosed {
-  right: 20px;
+  transform: translateX(0);
 }
 
 .container.light .sidebarToggle {
-  border-color: rgba(0, 0, 0, 0.08);
-  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.12);
+  background: #e5e7eb;
   color: #334155;
 }
 
 .container.dark .sidebarToggle {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: #05070c;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #1a1a1a;
   color: #f8fafc;
   border-right: none;
+}
+
+.container.light .sidebarToggle:hover {
+  background: #d1d5db;
+}
+
+.container.dark .sidebarToggle:hover {
+  background: #262626;
 }
 
 .sidebarToggleDots {
@@ -180,6 +191,10 @@
 
 .container.dark .sidebar {
   background: transparent;
+}
+
+.container.light .sidebar {
+  background: #e5e7eb;
 }
 
 .sidebarOpen {
@@ -215,6 +230,13 @@
   justify-content: center;
   position: relative;
   background: white;
+}
+
+.designCanvasSurface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
 }
 
 .canvasActions {
@@ -433,7 +455,7 @@
 
 .container.light .objectPanel {
   border-color: rgba(0, 0, 0, 0.08);
-  background-color: #f8fafc;
+  background-color: #e5e7eb;
 }
 
 .objectPanelContent {

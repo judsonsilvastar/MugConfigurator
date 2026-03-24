@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Canvas3D from './Canvas3D';
 import ImageUploader from './ImageUploader';
 import DesignPreview from './DesignPreview';
@@ -41,6 +41,7 @@ interface MugDesign {
 const MugConfigurator: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [cupDesignTextureUrl, setCupDesignTextureUrl] = useState<string | null>(null);
   const [design, setDesign] = useState<MugDesign>({
     cupColor: '#ffffff',
     textContent: '',
@@ -173,6 +174,10 @@ const MugConfigurator: React.FC = () => {
     setIsDark(!isDark);
   };
 
+  const handleDesignTextureChange = useCallback((dataUrl: string) => {
+    setCupDesignTextureUrl(dataUrl);
+  }, []);
+
   return (
     <div className={`${styles.container} ${isDark ? styles.dark : styles.light}`}>
       <header className={styles.header}>
@@ -190,7 +195,7 @@ const MugConfigurator: React.FC = () => {
       <main className={styles.main}>
         <section className={styles.leftPanel}>
           <div className={styles.canvas3DWrapper}>
-            <Canvas3D design={design} />
+            <Canvas3D design={design} designTextureUrl={cupDesignTextureUrl} />
           </div>
         </section>
 
@@ -214,6 +219,7 @@ const MugConfigurator: React.FC = () => {
                 onClearAllObjects: handleClearAllObjects,
                 onRemoveImageObject: handleRemoveImageObject,
                 onMoveImageObject: handleMoveImageObject,
+                onDesignTextureChange: handleDesignTextureChange,
               } as any)}
             />
           </div>
