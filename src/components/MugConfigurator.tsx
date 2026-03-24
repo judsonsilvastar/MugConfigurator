@@ -5,6 +5,7 @@ import Canvas3D from './Canvas3D';
 import ColorPicker from './ColorPicker';
 import TextCustomizer from './TextCustomizer';
 import ImageUploader from './ImageUploader';
+import DesignPreview from './DesignPreview';
 import styles from './MugConfigurator.module.css';
 
 interface MugDesign {
@@ -88,24 +89,23 @@ const MugConfigurator: React.FC = () => {
       </header>
 
       <main className={styles.main}>
-        <section className={styles.previewSection}>
-          <div className={styles.canvasWrapper}>
+        {/* Left: 3D Preview */}
+        <section className={styles.leftPanel}>
+          <div className={styles.canvas3DWrapper}>
             <Canvas3D design={design} />
           </div>
         </section>
 
-        <section className={styles.controlsSection}>
-          <div className={styles.controlsPanel}>
-            <h2>Customize Your Cup</h2>
+        {/* Right: Design Canvas and Controls */}
+        <section className={styles.rightPanel}>
+          {/* Top-Right: Design Canvas */}
+          <div className={styles.designCanvasWrapper}>
+            <DesignPreview design={design} />
+          </div>
 
-            <div className={styles.controlGroup}>
-              <h3>Cup Color</h3>
-              <ColorPicker
-                color={design.cupColor}
-                onChange={handleColorChange}
-                label="Select cup color"
-              />
-            </div>
+          {/* Bottom-Right: Object Adding Panel */}
+          <div className={styles.objectPanel}>
+            <h2>Add Elements</h2>
 
             <div className={styles.controlGroup}>
               <h3>Text</h3>
@@ -120,7 +120,7 @@ const MugConfigurator: React.FC = () => {
             </div>
 
             <div className={styles.controlGroup}>
-              <h3>Image</h3>
+              <h3>Images</h3>
               <ImageUploader
                 onImageUpload={handleImageUpload}
                 scale={design.imageScale}
