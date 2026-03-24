@@ -30,7 +30,7 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design }) => {
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f5);
+    scene.background = new THREE.Color(0xffffff);
     sceneRef.current = scene;
 
     // Camera setup

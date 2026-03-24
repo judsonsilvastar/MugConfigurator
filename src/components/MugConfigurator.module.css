@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   transition: background-color 0.3s, color 0.3s;
+  overflow-x: hidden;
 }
 
 .container.light {
@@ -60,6 +61,7 @@
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 1024px) {
@@ -74,6 +76,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  min-width: 0;
 }
 
 .canvas3DWrapper {
@@ -94,21 +97,23 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+  min-width: 0;
 }
 
 /* Top-Right: Design Canvas */
 .designCanvasWrapper {
-  flex: 1;
-  min-height: 300px;
+  flex: 0 0 35vh;
+  min-height: 240px;
+  max-height: 35vh;
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.02));
+  background: #ffffff;
 }
 
 .container.dark .designCanvasWrapper {
   border-color: rgba(255, 255, 255, 0.1);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  background: #ffffff;
 }
 
 .designCanvas {
@@ -122,7 +127,7 @@
 }
 
 .container.dark .designCanvas {
-  background: #2a2a2a;
+  background: #ffffff;
 }
 
 .designCanvas canvas {
@@ -137,10 +142,26 @@
   cursor: move;
 }
 
-.designCanvas div {
+.canvasTextObject {
   position: absolute;
-  user-select: none;
-  cursor: move;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 180px;
+  max-width: 90%;
+  padding: 8px 10px;
+  border: 1px dashed rgba(148, 163, 184, 0.7);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: text;
+  user-select: text;
+  outline: none;
+}
+
+.canvasTextObject:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18);
 }
 
 /* Bottom-Right: Object Adding Panel */
@@ -149,8 +170,15 @@
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   background-color: #ffffff;
-  max-height: 350px;
+  min-height: 300px;
+  max-height: 420px;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.objectPanelMenu {
+  display: flex;
+  flex-direction: column;
 }
 
 .container.dark .objectPanel {
@@ -169,30 +197,107 @@
   margin-bottom: 18px;
 }
 
-.controlGroup h3 {
-  font-size: 14px;
-  margin: 0 0 10px 0;
-  font-weight: 600;
-  text-transform: uppercase;
-  opacity: 0.8;
+.panelButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
-.resetButton {
+.objectPanelMenu .panelButtons {
+  flex: 1;
+  align-items: stretch;
+  margin-bottom: 0;
+}
+
+.panelButton {
+  min-height: 120px;
   width: 100%;
-  padding: 10px 16px;
-  background-color: #ff6b6b;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.14), transparent 45%),
+    radial-gradient(circle at 78% 72%, rgba(88, 101, 242, 0.22), transparent 48%),
+    linear-gradient(150deg, #11131a 0%, #06080d 55%, #0a0d14 100%);
+  color: #f7f7f8;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.objectPanelMenu .panelButton {
+  min-height: 100%;
+}
+
+.panelButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.panelButtonActive {
+  background-color: #2f3138;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.container.light .panelButton {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.1), transparent 45%),
+    radial-gradient(circle at 78% 72%, rgba(88, 101, 242, 0.18), transparent 48%),
+    linear-gradient(150deg, #171a23 0%, #0b0e14 55%, #121622 100%);
+}
+
+.panelDetailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panelDetailHeader h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.backButton {
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background-color: #f3f4f6;
+  color: #111827;
+  border-radius: 999px;
+  padding: 8px 14px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 12px;
 }
 
-.resetButton:hover {
-  background-color: #ff5252;
+.container.dark .backButton {
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #f9fafb;
+}
+
+.panelDetailBody {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  .panelButtons {
+    grid-template-columns: 1fr;
+  }
+
+  .panelButton {
+    min-height: 96px;
+    font-size: 28px;
+  }
+}
+
+.panelDetail {
+  display: flex;
+  flex-direction: column;
+  min-height: 240px;
 }
 
 .footer {
