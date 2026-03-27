@@ -19,6 +19,7 @@ interface MugDesign {
 interface Canvas3DProps {
   design: MugDesign;
   designTextureUrl: string | null;
+  selectedModelUrl?: string | null;
 }
 
 const MATTE_ROUGHNESS = 0.92;
@@ -277,14 +278,30 @@ function buildProceduralMug(cupColor: THREE.Color): ProceduralMug {
   };
 }
 
-const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
+function restoreEmbeddedMapsToDesignMaterials(
+  mats: (THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial)[],
+  embedded: (THREE.Texture | null)[]
+): void {
+  mats.forEach((m, i) => {
+    const orig = embedded[i] ?? null;
+    if (m.map && m.map !== orig) {
+      m.map.dispose();
+    }
+    m.map = orig;
+    m.needsUpdate = true;
+  });
+}
+
+const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl, selectedModelUrl }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const designMaterialsRef = useRef<(THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial)[]>([]);
   const bodyMaterialsRef = useRef<(THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial)[]>([]);
+  /** Diffuse maps from the GLB (or null) so we can restore after clearing a user overlay. */
+  const designEmbeddedMapsRef = useRef<(THREE.Texture | null)[]>([]);
   const designRef = useRef(design);
   designRef.current = design;
 
-  const modelUrl = getMugModelUrl();
+  const modelUrl = selectedModelUrl ?? getMugModelUrl();
   const [modelReady, setModelReady] = useState(() => !modelUrl);
 
   useEffect(() => {
@@ -445,7 +462,7 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
     let disposeMug: () => void = () => {};
     let proceduralGeometries: THREE.BufferGeometry[] = [];
 
-    const cupColor = new THREE.Color(designRef.current.cupColor);
+    const cupColor = new THREE.Color(0xffffff);
 
     if (modelUrl) {
       designMaterialsRef.current = [];
@@ -460,6 +477,7 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
           }
           designMaterialsRef.current = loaded.designMaterials;
           bodyMaterialsRef.current = loaded.bodyMaterials;
+          designEmbeddedMapsRef.current = loaded.designMaterials.map((m) => m.map ?? null);
           mugGroup = loaded.root;
           mugGroup.scale.setScalar(MUG_DISPLAY_SCALE);
           disposeMug = loaded.disposeModel;
@@ -467,7 +485,7 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
           setMeshesCastShadow(mugGroup, true);
           restMugOnGround(mugGroup, GROUND_SURFACE_Y, orbitTarget);
           syncOrbitFromCamera();
-          const c = new THREE.Color(designRef.current.cupColor);
+          const c = new THREE.Color(0xffffff);
           applyColorToMaterials(loaded.designMaterials, c);
           applyColorToMaterials(loaded.bodyMaterials, c);
           setModelReady(true);
@@ -480,6 +498,7 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
       proceduralGeometries = proc.geometries;
       designMaterialsRef.current = proc.designMaterials;
       bodyMaterialsRef.current = proc.bodyMaterials;
+      designEmbeddedMapsRef.current = [];
       mugGroup = proc.group;
       mugGroup.scale.setScalar(MUG_DISPLAY_SCALE);
       scene.add(mugGroup);
@@ -548,6 +567,7 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
       designMaterialsRef.current.forEach((m) => {
         m.map = null;
       });
+      designEmbeddedMapsRef.current = [];
       disposeMug();
       groundGeometry.dispose();
       groundMaterial.dispose();
@@ -555,11 +575,11 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
       designMaterialsRef.current = [];
       bodyMaterialsRef.current = [];
     };
-  }, []);
+  }, [modelUrl]);
 
   useEffect(() => {
     if (!modelReady) return;
-    const color = new THREE.Color(design.cupColor);
+    const color = new THREE.Color(0xffffff);
     applyColorToMaterials(designMaterialsRef.current, color);
     applyColorToMaterials(bodyMaterialsRef.current, color);
   }, [design.cupColor, modelReady]);
@@ -572,18 +592,10 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
 
     let texCancelled = false;
 
-    const clearMaps = () => {
-      mats.forEach((sideMat) => {
-        if (sideMat.map) {
-          sideMat.map.dispose();
-          sideMat.map = null;
-        }
-        sideMat.needsUpdate = true;
-      });
-    };
+    const embedded = designEmbeddedMapsRef.current;
 
     if (!designTextureUrl) {
-      clearMaps();
+      restoreEmbeddedMapsToDesignMaterials(mats, embedded);
       return () => {
         texCancelled = true;
       };
@@ -603,8 +615,10 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
           tex.dispose();
           return;
         }
-        prevMaps.forEach((pm, i) => {
-          if (pm && pm !== tex) pm.dispose();
+        prevMaps.forEach((pm) => {
+          if (pm && pm !== tex && !embedded.includes(pm)) {
+            pm.dispose();
+          }
         });
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.needsUpdate = true;
@@ -617,7 +631,9 @@ const Canvas3D: React.FC<Canvas3DProps> = ({ design, designTextureUrl }) => {
       },
       undefined,
       () => {
-        if (!texCancelled) clearMaps();
+        if (!texCancelled) {
+          restoreEmbeddedMapsToDesignMaterials(designMaterialsRef.current, designEmbeddedMapsRef.current);
+        }
       }
     );
 

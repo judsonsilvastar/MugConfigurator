@@ -1,5 +1,5 @@
-import MugConfigurator from '@/components/MugConfigurator';
+import MugWizard from '@/components/MugWizard';
 
 export default function Home() {
-  return <MugConfigurator />;
+  return <MugWizard />;
 }

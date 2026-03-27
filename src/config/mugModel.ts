@@ -7,7 +7,7 @@
  */
 
 /** Example: '/models/mug.glb' — set to null to use the built-in procedural mug */
-export const MUG_MODEL_URL: string | null = '/models/mug1.glb';
+export const MUG_MODEL_URL: string | null = '/models/mug_heart.glb';
 
 /**
  * Mesh names (case-insensitive) that receive the flat design texture and cup color tint.

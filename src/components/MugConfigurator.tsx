@@ -38,7 +38,11 @@ interface MugDesign {
   }>;
 }
 
-const MugConfigurator: React.FC = () => {
+interface MugConfiguratorProps {
+  selectedModelUrl?: string | null;
+}
+
+const MugConfigurator: React.FC<MugConfiguratorProps> = ({ selectedModelUrl }) => {
   const [isDark, setIsDark] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [cupDesignTextureUrl, setCupDesignTextureUrl] = useState<string | null>(null);
@@ -174,7 +178,7 @@ const MugConfigurator: React.FC = () => {
     setIsDark(!isDark);
   };
 
-  const handleDesignTextureChange = useCallback((dataUrl: string) => {
+  const handleDesignTextureChange = useCallback((dataUrl: string | null) => {
     setCupDesignTextureUrl(dataUrl);
   }, []);
 
@@ -195,7 +199,11 @@ const MugConfigurator: React.FC = () => {
       <main className={styles.main}>
         <section className={styles.leftPanel}>
           <div className={styles.canvas3DWrapper}>
-            <Canvas3D design={design} designTextureUrl={cupDesignTextureUrl} />
+            <Canvas3D
+              design={design}
+              designTextureUrl={cupDesignTextureUrl}
+              selectedModelUrl={selectedModelUrl}
+            />
           </div>
         </section>
 

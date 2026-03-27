@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { rasterizeCupDesign } from '@/lib/rasterizeCupDesign';
+import { isCupDesignSurfaceEmpty, rasterizeCupDesign } from '@/lib/rasterizeCupDesign';
 import styles from './MugConfigurator.module.css';
 
 interface MugDesign {
@@ -40,7 +40,7 @@ interface DesignPreviewProps {
   onClearAllObjects: () => void;
   onRemoveImageObject: (id: string) => void;
   onMoveImageObject: (id: string, direction: 'up' | 'down') => void;
-  onDesignTextureChange?: (dataUrl: string) => void;
+  onDesignTextureChange?: (dataUrl: string | null) => void;
 }
 
 type ObjectKey = 'text' | 'image';
@@ -311,6 +311,10 @@ const DesignPreview: React.FC<DesignPreviewProps> = ({
     const t = window.setTimeout(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+          if (isCupDesignSurfaceEmpty(design)) {
+            onDesignTextureChange(null);
+            return;
+          }
           void rasterizeCupDesign(surface, design).then(onDesignTextureChange);
         });
       });

@@ -1,3 +1,8 @@
+/** No images and no text object — use embedded GLB texture on the mug instead of a flat overlay. */
+export function isCupDesignSurfaceEmpty(design: RasterCupDesign): boolean {
+  return design.imageObjects.length === 0 && !design.hasTextObject;
+}
+
 export interface RasterCupDesign {
   imageObjects: Array<{
     id: string;
